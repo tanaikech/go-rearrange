@@ -49,6 +49,9 @@ Use up, down, page up, page down, home, end, enter, back space, Ctrl + c and esc
 - **Back space** is used for reset the rearranged data.
 - **Ctrl + c** and **Escape** are used for finishing rearranging.
 
+# Applications
+- [gorearrange](https://github.com/tanaikech/gorearrange) : This is a CLI tool to interactively rearrange a text data on a terminal.
+
 <a name="Update_History"></a>
 # Update History
 * v1.0.0 (October 15, 2017)
