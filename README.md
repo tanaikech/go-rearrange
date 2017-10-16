@@ -27,13 +27,14 @@ This library uses [termbox-go](https://github.com/nsf/termbox-go).
 
 # Usage
 ~~~
-result, history, err := rearrange.Do(data, step, selectmode)
+result, history, err := rearrange.Do(data, step, selectmode, indexmode)
 ~~~
 
 #### Input
 - **data ([]string)** : Data for rearranging. **This has to be 1 dimensional string array.** Each element is rearranged.
 - **step (int)** : Number of steps for PageUp, PageDown.
 - **selectmode (bool)** : If this is true, it's used as select mode. In this case, users only select a value. The selected values are output.
+- **indexmode (bool)** : If this is true, the rearranged result is output as the change of index for the source data. For example, if the source data and rearranged data are ``["a", "b", "c"]`` and ``["c", "b", "a"]``, respectively. The output will become ``[2, 1, 0]``.
 
 #### Output
 - **result ([]string)** : Rearranged data. Data is returned as ``[]string``.
@@ -58,5 +59,10 @@ Use up, down, page up, page down, home, end, enter, back space, Ctrl + c and esc
 * v1.0.0 (October 15, 2017)
 
     Initial release.
+
+* v1.0.1 (October 16, 2017)
+
+    - As one of outputs, **indexmode (bool)** was added. If this is true, the rearranged result is output as the change of index for the source data. For example, if the source data and rearranged data are ``["a", "b", "c"]`` and ``["c", "b", "a"]``, respectively. The output will become ``[2, 1, 0]``.
+
 
 [TOP](#TOP)

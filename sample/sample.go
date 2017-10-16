@@ -22,7 +22,7 @@ func main() {
 		"sample9",
 		"sample10",
 	}
-	result, history, err := rearrange.Do(data, 3, false)
+	result, history, err := rearrange.Do(data, 3, false, false)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)

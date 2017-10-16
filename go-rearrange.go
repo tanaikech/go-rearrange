@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 
 	termbox "github.com/nsf/termbox-go"
 )
@@ -27,6 +28,7 @@ type reaData struct {
 	Pgupdn               int
 	Onflag               bool
 	SelectMode           bool
+	IndexMode            bool
 }
 
 // valuesHistory : History data.
@@ -36,7 +38,7 @@ type valuesHistory struct {
 }
 
 // initRearrange : Set initial values.
-func initRearrange(data []string, pgupdn int, selectmode bool) *reaData {
+func initRearrange(data []string, pgupdn int, selectmode bool, index bool) *reaData {
 	r := &reaData{}
 	r.Data = data
 	r.Pgupdn = pgupdn
@@ -48,6 +50,7 @@ func initRearrange(data []string, pgupdn int, selectmode bool) *reaData {
 	r.Row = 0
 	r.Onflag = false
 	r.SelectMode = selectmode
+	r.IndexMode = index
 	return r
 }
 
@@ -383,6 +386,22 @@ func (r *reaData) resetDat(backupDat []string) {
 	termbox.Flush()
 }
 
+// setResult :
+func (r *reaData) setResult(backupDat []string) *reaData {
+	if r.IndexMode {
+		var temp []string
+		for _, d := range r.Data {
+			for i, s := range backupDat {
+				if d == s {
+					temp = append(temp, strconv.Itoa(i))
+				}
+			}
+		}
+		r.Data = temp
+	}
+	return r
+}
+
 // output : Output results
 func (r *reaData) output() ([]string, []valuesHistory, error) {
 	return r.Data, r.SelectedValueHistory, nil
@@ -407,7 +426,7 @@ func (r *reaData) rearrange() *reaData {
 		case termbox.EventKey:
 			switch e.Key {
 			case termbox.KeyCtrlC, termbox.KeyEsc:
-				return r
+				return r.setResult(backupDat)
 			case termbox.KeyHome:
 				r.moveCursorUp(r.Y + r.Row)
 			case termbox.KeyEnd:
@@ -430,7 +449,7 @@ func (r *reaData) rearrange() *reaData {
 }
 
 // Do : Method called from users.
-func Do(data []string, pgupdn int, selectmode bool) ([]string, []valuesHistory, error) {
+func Do(data []string, pgupdn int, selectmode bool, index bool) ([]string, []valuesHistory, error) {
 	defer termbox.Close()
 	if len(data) == 0 || reflect.TypeOf(data).String() != "[]string" {
 		return nil, nil, errors.New("Error: No data or wrong data.")
@@ -438,5 +457,5 @@ func Do(data []string, pgupdn int, selectmode bool) ([]string, []valuesHistory, 
 	if err := termbox.Init(); err != nil {
 		return nil, nil, errors.New(fmt.Sprintf("Error: %v\n", err))
 	}
-	return initRearrange(data, pgupdn, selectmode).rearrange().output()
+	return initRearrange(data, pgupdn, selectmode, index).rearrange().output()
 }

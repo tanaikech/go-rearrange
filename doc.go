@@ -1,6 +1,5 @@
 /*
 Package rearrange (go-rearrange.go) :
-
 This is a Golang library to interactively rearrange a text data on a terminal.
 
 When a text data is rearranged, there are many applications for automatically sorting text data. But there are a little CLI applications for manually rearranging it using. Furthermore, I just had to create an application for manually and interactively rearranging data. So I created this.
@@ -11,7 +10,7 @@ When a text data is rearranged, there are many applications for automatically so
 
 2. Output rearranged data as ``[]string``.
 
-3. Retrieve selected values and select history.
+3. Retrieve selected values as a history.
 
 https://github.com/tanaikech/go-rearrange/
 
@@ -22,12 +21,13 @@ You can read the detail information there.
 
 # Usage
 
-result, history, err := rearrange.Do(data, step)
+result, history, err := rearrange.Do(data, step, selectmode, indexmode)
 
 # Input
 - data ([]string) : Data for rearranging. This has to be 1 dimensional string array. Each element is rearranged.
 - step (int) : Number of steps for PageUp, PageDown.
 - selectmode (bool) : If this is true, it's used as select mode. In this case, users only select a value. The selected values are output.
+- indexmode (bool) : If this is true, the rearranged result is output as the change of index for the source data. For example, if the source data and rearranged data are ["a", "b", "c"] and ["c", "b", "a"], respectively. The output will become [2, 1, 0].
 
 # Output
 - result ([]string) : Rearranged data. Data is returned as []string.
