@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"strconv"
 
+	runewidth "github.com/mattn/go-runewidth"
 	termbox "github.com/nsf/termbox-go"
 )
 
@@ -21,6 +22,7 @@ type reaData struct {
 	SelectedValue        string
 	SelectedValueHistory []valuesHistory
 	Data                 []string
+	DataWithInf          []dataWithInfEle
 	Pos                  int
 	CPos                 int
 	Width                int
@@ -37,6 +39,11 @@ type valuesHistory struct {
 	Value string
 }
 
+type dataWithInfEle struct {
+	Index   int
+	DataEle string
+}
+
 // initRearrange : Set initial values.
 func initRearrange(data []string, pgupdn int, selectmode bool, index bool) *reaData {
 	r := &reaData{}
@@ -51,59 +58,75 @@ func initRearrange(data []string, pgupdn int, selectmode bool, index bool) *reaD
 	r.Onflag = false
 	r.SelectMode = selectmode
 	r.IndexMode = index
+	r.inDat(data)
 	return r
 }
 
-// drawLineDef : Set one line to buffer as a default color. This is used for static data.
-func drawLineDef(x, y int, str []rune) {
-	color := termbox.ColorDefault
-	backgroundColor := termbox.ColorDefault
+// inDat : Import data to DataWithInf.
+func (r *reaData) inDat(data []string) {
+	for i, e := range data {
+		d := &dataWithInfEle{
+			Index:   i,
+			DataEle: e,
+		}
+		r.DataWithInf = append(r.DataWithInf, *d)
+	}
+}
+
+// drawDef : Drawing data to buffer with default colors.
+func (r *reaData) drawDef(x, y int, str []rune, color, backgroundColor termbox.Attribute) {
+	for _, e := range str {
+		termbox.SetCell(x, y, e, color, backgroundColor)
+		x += runewidth.RuneWidth(e)
+	}
+}
+
+// drawC : Drawing data to buffer with colors.
+func (r *reaData) drawC(x, y int, str []rune, color, backgroundColor termbox.Attribute) {
 	for i := 0; i < len(str); i += 1 {
 		termbox.SetCell(x+i, y, str[i], color, backgroundColor)
 	}
+}
+
+// drawLineDef : Set one line to buffer as a default color. This is used for static data.
+func (r *reaData) drawLineDef(x, y int, str []rune) {
+	r.drawDef(x, y, str, termbox.ColorDefault, termbox.ColorDefault)
 }
 
 // drawLineMove : Set one line with a special color to buffer. This is used for dynamic data.
-func drawLineMove(x, y int, str []rune) {
-	color := termbox.ColorBlack
-	backgroundColor := termbox.ColorWhite
-	for i := 0; i < len(str); i += 1 {
-		termbox.SetCell(x+i, y, str[i], color, backgroundColor)
-	}
+func (r *reaData) drawLineMove(x, y int, str []rune) {
+	r.drawC(x, y, str, termbox.ColorBlack, termbox.ColorWhite)
 }
 
 // drawLineSelect : Set one line with a special color to buffer. This is used for selected data.
-func drawLineSelect(x, y int, str []rune) {
-	color := termbox.ColorBlack
-	backgroundColor := termbox.ColorCyan
-	for i := 0; i < len(str); i += 1 {
-		termbox.SetCell(x+i, y, str[i], color, backgroundColor)
-	}
+func (r *reaData) drawLineSelect(x, y int, str []rune) {
+	r.drawC(x, y, str, termbox.ColorBlack, termbox.ColorCyan)
 }
 
 // inBufD : Display data as a default color. This is used for static data.
-func inBufD(val []string) {
+func (r *reaData) inBufD(val []string) {
 	for i, e := range val {
-		drawLineDef(0, i, []rune(e))
+		r.drawLineDef(0, i, []rune(e))
 	}
+}
+
+// getDatFromBuf : Get data from buffer
+func (r *reaData) getDatFromBuf(x, y int) []rune {
+	tex0 := []rune{}
+	for i := 0; i < r.Width; i += 1 {
+		tex0 = append(tex0, termbox.CellBuffer()[(r.Width*y)+i].Ch)
+	}
+	return tex0
 }
 
 // inBufC : Display data as a special color. This is used for dynamic data.
 func (r *reaData) inBufC(x, y int) {
-	tex0 := []rune{}
-	for i := 0; i < r.Width; i += 1 {
-		tex0 = append(tex0, termbox.CellBuffer()[(r.Width*y)+i].Ch)
-	}
-	drawLineMove(x, y, tex0)
+	r.drawLineMove(x, y, r.getDatFromBuf(x, y))
 }
 
 // inBufS : Display data as a special color. This is used for selected data.
 func (r *reaData) inBufS(x, y int) {
-	tex0 := []rune{}
-	for i := 0; i < r.Width; i += 1 {
-		tex0 = append(tex0, termbox.CellBuffer()[(r.Width*y)+i].Ch)
-	}
-	drawLineSelect(x, y, tex0)
+	r.drawLineSelect(x, y, r.getDatFromBuf(x, y))
 }
 
 // moveEleArb : Create data for moving cursor.
@@ -115,12 +138,24 @@ func (r *reaData) moveEleArb() {
 	ar2 = append(ar2[:1], ar2[0:]...)
 	ar2[0] = temp
 	r.Data = append(ar1, ar2...)
+	r.moveEleArbBase()
+}
+
+// moveEleArbBase : Create data for moving cursor. (json)
+func (r *reaData) moveEleArbBase() {
+	temp := r.DataWithInf[r.CPos]
+	r.DataWithInf = append(r.DataWithInf[:r.CPos], r.DataWithInf[r.CPos+1:len(r.DataWithInf)]...)
+	ar1 := r.DataWithInf[:r.Pos]
+	ar2 := r.DataWithInf[r.Pos:]
+	ar2 = append(ar2[:1], ar2[0:]...)
+	ar2[0] = temp
+	r.DataWithInf = append(ar1, ar2...)
 }
 
 // firstDraw : Draw data. This is used for the first time after it launches this.
 func (r *reaData) firstDraw() {
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-	inBufD(r.Data)
+	r.inBufD(r.Data)
 	r.inBufC(0, 0)
 	termbox.SetCursor(0, 0)
 	termbox.Flush()
@@ -139,7 +174,7 @@ func (r *reaData) moveCursorUp(mv int) {
 			}
 			r.Pos = r.Y
 			r.moveEleArb()
-			inBufD(r.Data)
+			r.inBufD(r.Data)
 			r.inBufS(r.X, r.Y)
 		} else {
 			if r.SelectMode {
@@ -150,7 +185,7 @@ func (r *reaData) moveCursorUp(mv int) {
 			} else {
 				r.Y -= mv
 			}
-			inBufD(r.Data)
+			r.inBufD(r.Data)
 			r.inBufC(r.X, r.Y)
 		}
 	} else {
@@ -193,7 +228,7 @@ func (r *reaData) moveCursorUp(mv int) {
 				}
 			}
 			r.moveEleArb()
-			inBufD(r.Data[r.Row : r.Row+r.Height])
+			r.inBufD(r.Data[r.Row : r.Row+r.Height])
 			r.inBufS(r.X, r.Y)
 		} else {
 			if r.SelectMode {
@@ -229,7 +264,7 @@ func (r *reaData) moveCursorUp(mv int) {
 					}
 				}
 			}
-			inBufD(r.Data[r.Row : r.Row+r.Height])
+			r.inBufD(r.Data[r.Row : r.Row+r.Height])
 			r.inBufC(r.X, r.Y)
 		}
 	}
@@ -249,7 +284,7 @@ func (r *reaData) moveCursorDn(mv int) {
 			}
 			r.Pos = r.Y
 			r.moveEleArb()
-			inBufD(r.Data)
+			r.inBufD(r.Data)
 			r.inBufS(r.X, r.Y)
 		} else {
 			if r.SelectMode {
@@ -260,7 +295,7 @@ func (r *reaData) moveCursorDn(mv int) {
 			} else {
 				r.Y += mv
 			}
-			inBufD(r.Data)
+			r.inBufD(r.Data)
 			r.inBufC(r.X, r.Y)
 		}
 	} else {
@@ -303,7 +338,7 @@ func (r *reaData) moveCursorDn(mv int) {
 				}
 			}
 			r.moveEleArb()
-			inBufD(r.Data[r.Row : r.Row+r.Height])
+			r.inBufD(r.Data[r.Row : r.Row+r.Height])
 			r.inBufS(r.X, r.Y)
 		} else {
 			if r.SelectMode {
@@ -339,7 +374,7 @@ func (r *reaData) moveCursorDn(mv int) {
 					}
 				}
 			}
-			inBufD(r.Data[r.Row : r.Row+r.Height])
+			r.inBufD(r.Data[r.Row : r.Row+r.Height])
 			r.inBufC(r.X, r.Y)
 		}
 	}
@@ -373,9 +408,9 @@ func (r *reaData) resetDat(backupDat []string) {
 	r.Data = baseDat
 	_ = copy(r.Data, backupDat)
 	if r.Height > len(r.Data) {
-		inBufD(r.Data)
+		r.inBufD(r.Data)
 	} else {
-		inBufD(r.Data[r.Row : r.Row+r.Height])
+		r.inBufD(r.Data[r.Row : r.Row+r.Height])
 	}
 	r.inBufC(r.X, r.Y)
 	if r.Onflag {
@@ -383,26 +418,25 @@ func (r *reaData) resetDat(backupDat []string) {
 		r.SelectedValue = ""
 		r.Pos = 0
 	}
+	var temp reaData
+	r.DataWithInf = temp.DataWithInf
+	r.inDat(baseDat)
 	termbox.Flush()
 }
 
-// setResult :
+// setResult : When data index is output, this is used.
 func (r *reaData) setResult(backupDat []string) *reaData {
 	if r.IndexMode {
 		var temp []string
-		for _, d := range r.Data {
-			for i, s := range backupDat {
-				if d == s {
-					temp = append(temp, strconv.Itoa(i))
-				}
-			}
+		for _, d := range r.DataWithInf {
+			temp = append(temp, strconv.Itoa(d.Index))
 		}
 		r.Data = temp
 	}
 	return r
 }
 
-// output : Output results
+// output : Output results.
 func (r *reaData) output() ([]string, []valuesHistory, error) {
 	return r.Data, r.SelectedValueHistory, nil
 }
@@ -441,7 +475,7 @@ func (r *reaData) rearrange() *reaData {
 				r.moveCursorDn(1)
 			case termbox.KeyEnter:
 				r.grabData()
-			case termbox.KeyBackspace:
+			case termbox.KeySpace, termbox.KeyBackspace:
 				r.resetDat(backupDat)
 			}
 		}

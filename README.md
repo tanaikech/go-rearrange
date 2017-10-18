@@ -64,5 +64,9 @@ Use up, down, page up, page down, home, end, enter, back space, Ctrl + c and esc
 
     - As one of outputs, **indexmode (bool)** was added. If this is true, the rearranged result is output as the change of index for the source data. For example, if the source data and rearranged data are ``["a", "b", "c"]`` and ``["c", "b", "a"]``, respectively. The output will become ``[2, 1, 0]``.
 
+* v1.0.2 (October 18, 2017)
+
+    - From this version, data included multi-bytes characters can be used. At Linux, it works fine. At Windows DOS, rearranging and selecting data can be done. But the displayed data is shifted. Although this may be a bug of termbox-go, I don't know the reason. I'm sorry. On the other hand, data with only single-byte characters works fine. About MAC, I don't have it. If someone can confirm and tell me it, I'm glad.
+
 
 [TOP](#TOP)
