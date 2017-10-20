@@ -44,12 +44,14 @@ result, history, err := rearrange.Do(data, step, selectmode, indexmode)
 ### Keys for rearranging
 Use up, down, page up, page down, home, end, enter, back space, Ctrl + c and escape keys.
 
-- **Up** and **Down** are used for moving one line.
-- **Page up** and **Page down** are used for moving several lines.
-- **Home** and **End** are used for moving top and bottom of data.
-- **Enter** is used for selecting a value to rearrange.
-- **Back space** is used for reset the rearranged data.
-- **Ctrl + c** and **Escape** are used for finishing rearranging.
+| Key | Effect |
+|:-----------|:------------|
+| **Up**, **Down** | Moving one line |
+| **Page up**, **Page down** | Moving several lines |
+| **Home**, **End** | Moving top and bottom of data |
+| **Enter** | Selecting a value to rearrange |
+| **Back space** or **Space** | Reset the rearranged data |
+| **Ctrl + c** or **Escape** | Finishing rearranging |
 
 # Applications
 - [gorearrange](https://github.com/tanaikech/gorearrange) : This is a CLI tool to interactively rearrange a text data on a terminal.
